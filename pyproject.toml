@@ -1,0 +1,22 @@
+[project]
+name = "llm-agent-semantic-diffusion"
+version = "0.1.0"
+description = "ECE 227 Final Project that examines the impact of network structure on opinion diffusio through LLM agents."
+authors = [
+    {name = "Henri Schulz",email = "henritschulz@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "ollama (>=0.6.1,<0.7.0)",
+    "pydantic (>=2.12.5,<3.0.0)",
+    "pyyaml (>=6.0.3,<7.0.0)"
+]
+
+[tool.poetry]
+package-mode = false
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,16 @@
+agent_group:
+  agents:
+    - port: 11475
+      id: 0
+      personality:
+        personality_type: "2"
+    - port: 11476
+      id: 1
+      personality:
+        personality_type: "1"
+  startup_instructions: "Tell me your opinions."
+graph:
+  nodes:
+    0: [0, 1, 2, 3]
+    1: [1, 3]
+time_steps: 10
