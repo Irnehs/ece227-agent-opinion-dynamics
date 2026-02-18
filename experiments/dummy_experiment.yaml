@@ -1,4 +1,5 @@
 agent_group:
+  llm_model: "llama3.2:1b"
   agents:
     - port: 11475
       id: 0
