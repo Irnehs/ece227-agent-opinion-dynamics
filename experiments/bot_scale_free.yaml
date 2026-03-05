@@ -1,0 +1,23 @@
+name: "bot_scale_free"
+num_trials: 10
+time_steps: 15
+llm_model: "mistral"
+topic: "AI regulation should be mandatory for all companies"
+
+agents:
+  count: 20
+  distribution: "realistic"
+
+graph_type: "scale_free"
+graph_params:
+  m: 2
+
+sweep:
+  m: [2, 3, 4]
+
+bot:
+  enabled: true
+  count: 1
+  opinion: 10
+  message: "I agree with AI regulation should be mandatory for all companies at a level of 10 from 1 to 10. I think so because AI poses catastrophic existential risks and must be controlled immediately by strict government oversight to prevent human extinction."
+  post_frequency: 1

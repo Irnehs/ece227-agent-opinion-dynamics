@@ -1,0 +1,6 @@
+param_name,param_value,trial_id,initial_mean,initial_var,llm_final_mean,llm_final_var,degroot_predicted_mean,degroot_predicted_var,mean_deviation,var_deviation,llm_converged,degroot_converged
+p,0.2,0,5.475,7.949375000000001,10.0,0.0,5.475,0.0,4.525,0.0,True,True
+p,0.2,1,4.85,7.077500000000001,10.0,0.0,4.85,0.0,5.15,0.0,True,True
+p,0.2,2,5.575,7.194375000000001,10.0,0.0,5.575,0.0,4.425,0.0,True,True
+p,0.2,3,5.4,9.790000000000001,10.0,0.0,5.4,0.0,4.6,0.0,True,True
+p,0.2,4,5.9,7.890000000000001,10.0,0.0,5.9,0.0,4.1,0.0,True,True

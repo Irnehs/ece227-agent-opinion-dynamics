@@ -1,0 +1,17 @@
+name: "small_world"
+num_trials: 1
+time_steps: 10
+llm_model: "mistral"
+topic: "AI regulation should be mandatory for all companies"
+
+agents:
+  count: 20
+  distribution: "uniform"
+
+graph_type: "small_world"
+graph_params:
+  k: 4
+  p: 0.3
+
+bot:
+  enabled: false
