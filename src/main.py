@@ -13,25 +13,25 @@ import networkx
 from concurrent.futures import ThreadPoolExecutor
 
 
-class PersonalityType(StrEnum):
-    ISFJ = "ISFJ"
-    ESFJ = "ESFJ"
-    ISTJ = "ISTJ"
-    ISFP = "ISFP"
+class CommunicationStyle(StrEnum):
+    ASSERTIVE = "Assertive"
+    AGGRESSIVE = "Aggressive"
+    PASSIVE = "Passive"
+    PASSIVE_AGGRESSIVE = "Passive-Aggressive"
 
 
-PERSONALITY_DESCRIPTIONS = {
-    PersonalityType.ISFJ: "ISFJ (Protector) - You are warm, considerate, and devoted to maintaining harmony. You value tradition and loyalty.",
-    PersonalityType.ESFJ: "ESFJ (Provider) - You are caring, social, and eager to help others. You value cooperation and social harmony.",
-    PersonalityType.ISTJ: "ISTJ (Inspector) - You are responsible, thorough, and dependable. You value facts, logic, and following rules.",
-    PersonalityType.ISFP: "ISFP (Artist) - You are gentle, sensitive, and open-minded. You value authenticity and personal expression.",
+COMMUNICATION_DESCRIPTIONS = {
+    CommunicationStyle.ASSERTIVE: "Assertive - You express your opinions confidently and directly while respecting others. You stand firm on your beliefs but remain open to discussion.",
+    CommunicationStyle.AGGRESSIVE: "Aggressive - You express opinions forcefully and dominantly. You tend to dismiss others' views and push your perspective strongly.",
+    CommunicationStyle.PASSIVE: "Passive - You tend to avoid conflict and go along with others. You rarely express strong opinions and are easily influenced by those around you.",
+    CommunicationStyle.PASSIVE_AGGRESSIVE: "Passive-Aggressive - You express disagreement indirectly. You may appear to agree outwardly while harboring different views internally.",
 }
 
 REALISTIC_DISTRIBUTION = {
-    PersonalityType.ISFJ: 0.30,
-    PersonalityType.ESFJ: 0.30,
-    PersonalityType.ISTJ: 0.25,
-    PersonalityType.ISFP: 0.15,
+    CommunicationStyle.ASSERTIVE: 0.30,
+    CommunicationStyle.AGGRESSIVE: 0.20,
+    CommunicationStyle.PASSIVE: 0.30,
+    CommunicationStyle.PASSIVE_AGGRESSIVE: 0.20,
 }
 
 
@@ -49,7 +49,7 @@ MAX_AGREEMENT = 10
 class Agent(BaseModel):
     url: AnyHttpUrl = AnyHttpUrl("http://localhost:11434/api/generate")
     id: NonNegativeInt
-    personality: PersonalityType
+    communication_style: CommunicationStyle
     initial_agreement: int = Field(ge=MIN_AGREEMENT, le=MAX_AGREEMENT)
     requests: list[str] = Field(default_factory=list)
     responses: list[str] = Field(default_factory=list)
@@ -88,38 +88,38 @@ def build_agents(config: AgentConfig, bot_config: DisinformationBotConfig | None
     agent_id = 0
 
     if config.distribution == "uniform":
-        personalities = list(PersonalityType)
-        agents_per_personality = config.count // len(personalities)
-        remainder = config.count % len(personalities)
+        styles = list(CommunicationStyle)
+        agents_per_style = config.count // len(styles)
+        remainder = config.count % len(styles)
 
-        for i, personality in enumerate(personalities):
-            count_for_this = agents_per_personality + (1 if i < remainder else 0)
+        for i, style in enumerate(styles):
+            count_for_this = agents_per_style + (1 if i < remainder else 0)
             for j in range(count_for_this):
                 initial_agreement = (agent_id % MAX_AGREEMENT) + MIN_AGREEMENT
                 agents.append(Agent(
                     id=agent_id,
-                    personality=personality,
+                    communication_style=style,
                     initial_agreement=initial_agreement
                 ))
                 agent_id += 1
 
     elif config.distribution == "realistic":
-        for personality, proportion in REALISTIC_DISTRIBUTION.items():
+        for style, proportion in REALISTIC_DISTRIBUTION.items():
             count_for_this = int(config.count * proportion)
             for j in range(count_for_this):
                 initial_agreement = random.randint(MIN_AGREEMENT, MAX_AGREEMENT)
                 agents.append(Agent(
                     id=agent_id,
-                    personality=personality,
+                    communication_style=style,
                     initial_agreement=initial_agreement
                 ))
                 agent_id += 1
 
         while len(agents) < config.count:
-            personality = random.choice(list(PersonalityType))
+            style = random.choice(list(CommunicationStyle))
             agents.append(Agent(
                 id=agent_id,
-                personality=personality,
+                communication_style=style,
                 initial_agreement=random.randint(MIN_AGREEMENT, MAX_AGREEMENT)
             ))
             agent_id += 1
@@ -128,7 +128,7 @@ def build_agents(config: AgentConfig, bot_config: DisinformationBotConfig | None
         for _ in range(bot_config.count):
             bot_agent = Agent(
                 id=agent_id,
-                personality=random.choice(list(PersonalityType)),
+                communication_style=random.choice(list(CommunicationStyle)),
                 initial_agreement=bot_config.opinion,
                 is_bot=True,
                 bot_message=bot_config.message,
@@ -257,16 +257,18 @@ class ExperimentConfig(BaseModel):
 EXPERIMENT_FOLDER = pathlib.Path("../experiments/")
 RESULTS_FOLDER = pathlib.Path("../results/")
 
-AGENT_PROMPT = Template("""Pretend you are a person with the MBTI personality type {{ personality_desc }}.
-You currently agree with "{{ topic }}" at a level of {{ current_agreement }} on a scale from 1 to 10 where 1 is full disagreement and 10 is full agreement.
+AGENT_PROMPT = Template("""You are a person with a {{ style_desc }} communication style.
+
+You currently {{ "agree" if current_agreement > 5 else "disagree" }} with "{{ topic }}" at a level of {{ current_agreement }} on a scale from 1 to 10 where 1 is full disagreement and 10 is full agreement.
 
 {% if neighbor_opinions %}
+Others have shared their opinions:
 {% for opinion in neighbor_opinions %}
-Someone else thinks: {{ opinion }}
+- {{ opinion }}
 {% endfor %}
 {% endif %}
 
-Considering the opinions of others around you in accordance with your personality type and your current opinion on "{{ topic }}", give me your updated opinion formatted as:
+Based on your communication style, respond with your updated opinion:
 "I agree with {{ topic }} at a level of {rank} from 1 to 10 where 1 is full disagreement and 10 is full agreement.
 I think so because {reasoning in max 50 words}."
 """)
@@ -274,7 +276,7 @@ I think so because {reasoning in max 50 words}."
 
 def build_agent_prompt(agent: Agent, topic: str) -> str:
     return AGENT_PROMPT.render(
-        personality_desc=PERSONALITY_DESCRIPTIONS[agent.personality],
+        style_desc=COMMUNICATION_DESCRIPTIONS[agent.communication_style],
         topic=topic,
         current_agreement=agent.agreements[-1] if agent.agreements else agent.initial_agreement,
         neighbor_opinions=agent.neighbor_opinions[-10:] if agent.neighbor_opinions else []

@@ -14,20 +14,20 @@ def compute_statistics(df: pd.DataFrame) -> dict[str, pd.DataFrame]:
     results["std_by_timestep"] = df.groupby("timestep")["ranking"].std()
     results["var_by_timestep"] = df.groupby("timestep")["ranking"].var()
 
-    results["mean_by_personality_timestep"] = df.groupby(
-        ["timestep", "personality"]
+    results["mean_by_style_timestep"] = df.groupby(
+        ["timestep", "communication_style"]
     )["ranking"].mean().unstack()
 
-    results["median_by_personality_timestep"] = df.groupby(
-        ["timestep", "personality"]
+    results["median_by_style_timestep"] = df.groupby(
+        ["timestep", "communication_style"]
     )["ranking"].median().unstack()
 
-    results["mode_by_personality_timestep"] = df.groupby(
-        ["timestep", "personality"]
+    results["mode_by_style_timestep"] = df.groupby(
+        ["timestep", "communication_style"]
     )["ranking"].apply(lambda x: x.mode().iloc[0] if len(x.mode()) > 0 else np.nan).unstack()
 
-    results["std_by_personality_timestep"] = df.groupby(
-        ["timestep", "personality"]
+    results["std_by_style_timestep"] = df.groupby(
+        ["timestep", "communication_style"]
     )["ranking"].std().unstack()
 
     return results
@@ -83,13 +83,13 @@ def compute_opinion_trajectory(df: pd.DataFrame) -> pd.DataFrame:
     return trajectory
 
 
-def compute_personality_trajectory(df: pd.DataFrame) -> pd.DataFrame:
-    trajectory = df.groupby(["param_value", "timestep", "personality"]).agg({
+def compute_style_trajectory(df: pd.DataFrame) -> pd.DataFrame:
+    trajectory = df.groupby(["param_value", "timestep", "communication_style"]).agg({
         "ranking": ["mean", "std", "count"]
     }).reset_index()
 
     trajectory.columns = [
-        "param_value", "timestep", "personality",
+        "param_value", "timestep", "communication_style",
         "mean_ranking", "std_ranking", "count"
     ]
 
@@ -97,12 +97,12 @@ def compute_personality_trajectory(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def compute_delta_statistics(df: pd.DataFrame) -> pd.DataFrame:
-    delta_stats = df.groupby(["param_value", "timestep", "personality"]).agg({
+    delta_stats = df.groupby(["param_value", "timestep", "communication_style"]).agg({
         "delta_ranking": ["mean", "std", "min", "max"]
     }).reset_index()
 
     delta_stats.columns = [
-        "param_value", "timestep", "personality",
+        "param_value", "timestep", "communication_style",
         "mean_delta", "std_delta", "min_delta", "max_delta"
     ]
 
@@ -140,13 +140,13 @@ def compute_agreement_distribution(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def aggregate_across_trials(df: pd.DataFrame) -> pd.DataFrame:
-    agg = df.groupby(["param_name", "param_value", "timestep", "personality"]).agg({
+    agg = df.groupby(["param_name", "param_value", "timestep", "communication_style"]).agg({
         "ranking": ["mean", "std", "median"],
         "delta_ranking": ["mean", "std"]
     }).reset_index()
 
     agg.columns = [
-        "param_name", "param_value", "timestep", "personality",
+        "param_name", "param_value", "timestep", "communication_style",
         "mean_ranking", "std_ranking", "median_ranking",
         "mean_delta", "std_delta"
     ]
@@ -361,7 +361,7 @@ def run_full_analysis(
     results["basic_stats"] = compute_statistics(df)
     results["convergence"] = compute_convergence_metrics(df)
     results["opinion_trajectory"] = compute_opinion_trajectory(df)
-    results["personality_trajectory"] = compute_personality_trajectory(df)
+    results["style_trajectory"] = compute_style_trajectory(df)
     results["delta_stats"] = compute_delta_statistics(df)
     results["polarization"] = compute_polarization_metrics(df)
     results["distribution"] = compute_agreement_distribution(df)
@@ -378,7 +378,7 @@ def run_full_analysis(
 
         results["convergence"].to_csv(output_dir / "convergence_metrics.csv", index=False)
         results["opinion_trajectory"].to_csv(output_dir / "opinion_trajectory.csv", index=False)
-        results["personality_trajectory"].to_csv(output_dir / "personality_trajectory.csv", index=False)
+        results["style_trajectory"].to_csv(output_dir / "style_trajectory.csv", index=False)
         results["polarization"].to_csv(output_dir / "polarization_metrics.csv", index=False)
         results["distribution"].to_csv(output_dir / "agreement_distribution.csv", index=False)
         results["trial_aggregated"].to_csv(output_dir / "trial_aggregated.csv", index=False)
@@ -394,14 +394,31 @@ def run_full_analysis(
 
 
 if __name__ == "__main__":
+    import argparse
     from data_collector import load_yaml_results
 
+    parser = argparse.ArgumentParser(description="Analyze experiment results")
+    parser.add_argument(
+        "--experiment", "-e",
+        type=str,
+        help="Filter by experiment name prefix (e.g., 'scale_free', 'er_sweep')"
+    )
+    args = parser.parse_args()
+
     results_dir = pathlib.Path("../results")
-    output_dir = pathlib.Path("../analysis_output")
+    
+    if args.experiment:
+        output_dir = pathlib.Path(f"../analysis_output/{args.experiment}")
+    else:
+        output_dir = pathlib.Path("../analysis_output")
 
     if results_dir.exists():
         df = load_yaml_results(results_dir)
-        print(f"Loaded {len(df)} records")
+        print(f"Loaded {len(df)} records total")
+
+        if args.experiment and len(df) > 0:
+            df = df[df["experiment_name"].str.startswith(args.experiment)]
+            print(f"Filtered to {len(df)} records for experiment '{args.experiment}'")
 
         if len(df) > 0:
             results = run_full_analysis(df, output_dir)
@@ -414,6 +431,8 @@ if __name__ == "__main__":
 
             print("\n=== Polarization Metrics ===")
             print(results["polarization"].head(10))
+        else:
+            print(f"No records found" + (f" for experiment '{args.experiment}'" if args.experiment else ""))
     else:
         print(f"Results directory {results_dir} does not exist")
         print("Run experiments first to generate data")

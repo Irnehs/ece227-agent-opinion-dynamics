@@ -34,7 +34,7 @@ class TimestepRecord:
     param_value: float
     timestep: int
     node_id: int
-    personality: str
+    communication_style: str
     neighbors: list[int]
     ranking: int
     delta_ranking: int
@@ -53,7 +53,7 @@ class DataCollector:
         param_value: float,
         timestep: int,
         node_id: int,
-        personality: str,
+        communication_style: str,
         neighbors: list[int],
         ranking: int,
         previous_ranking: int,
@@ -65,7 +65,7 @@ class DataCollector:
             param_value=param_value,
             timestep=timestep,
             node_id=node_id,
-            personality=personality,
+            communication_style=communication_style,
             neighbors=neighbors,
             ranking=ranking,
             delta_ranking=ranking - previous_ranking,
@@ -82,7 +82,7 @@ class DataCollector:
                 "param_value": r.param_value,
                 "timestep": r.timestep,
                 "node_id": r.node_id,
-                "personality": r.personality,
+                "communication_style": r.communication_style,
                 "neighbors": str(r.neighbors),
                 "ranking": r.ranking,
                 "delta_ranking": r.delta_ranking,
@@ -133,9 +133,9 @@ def load_yaml_results(results_dir: pathlib.Path) -> pd.DataFrame:
 
         for agent_data in agents:
             node_id = agent_data.get("id", 0)
-            personality = agent_data.get("personality", "unknown")
-            if isinstance(personality, list):
-                personality = personality[0] if personality else "unknown"
+            comm_style = agent_data.get("communication_style", agent_data.get("personality", "unknown"))
+            if isinstance(comm_style, list):
+                comm_style = comm_style[0] if comm_style else "unknown"
             agreements = agent_data.get("agreements", [])
             reasons = agent_data.get("reasons", [])
 
@@ -150,7 +150,7 @@ def load_yaml_results(results_dir: pathlib.Path) -> pd.DataFrame:
                     "param_value": param_value,
                     "timestep": t,
                     "node_id": node_id,
-                    "personality": personality,
+                    "communication_style": comm_style,
                     "ranking": ranking,
                     "delta_ranking": ranking - prev_ranking,
                     "reason": reason

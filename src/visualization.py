@@ -16,11 +16,11 @@ except ImportError:
 
 plt.style.use('seaborn-v0_8-whitegrid')
 COLORS = sns.color_palette("husl", 8)
-PERSONALITY_COLORS = {
-    "ISFJ": COLORS[0],
-    "ESFJ": COLORS[1],
-    "ISTJ": COLORS[2],
-    "ISFP": COLORS[3],
+STYLE_COLORS = {
+    "Assertive": COLORS[0],
+    "Aggressive": COLORS[1],
+    "Passive": COLORS[2],
+    "Passive-Aggressive": COLORS[3],
 }
 
 
@@ -37,26 +37,26 @@ def plot_agreement_distribution_over_time(
         print(f"No data for param_value={param_value}, skipping plot")
         return None
 
-    personalities = df["personality"].unique()
-    n_personalities = len(personalities)
+    styles = df["communication_style"].unique()
+    n_styles = len(styles)
 
-    if n_personalities == 0:
-        print(f"No personalities found for param_value={param_value}, skipping plot")
+    if n_styles == 0:
+        print(f"No communication styles found for param_value={param_value}, skipping plot")
         return None
 
-    fig, axes = plt.subplots(n_personalities, 1, figsize=figsize, sharex=True)
-    if n_personalities == 1:
+    fig, axes = plt.subplots(n_styles, 1, figsize=figsize, sharex=True)
+    if n_styles == 1:
         axes = [axes]
 
     timesteps = sorted(df["timestep"].unique())
 
-    for ax, personality in zip(axes, personalities):
-        personality_df = df[df["personality"] == personality]
+    for ax, style in zip(axes, styles):
+        style_df = df[df["communication_style"] == style]
 
         heatmap_data = np.zeros((10, len(timesteps)))
 
         for t_idx, t in enumerate(timesteps):
-            t_data = personality_df[personality_df["timestep"] == t]["ranking"]
+            t_data = style_df[style_df["timestep"] == t]["ranking"]
             for ranking in range(1, 11):
                 heatmap_data[ranking - 1, t_idx] = (t_data == ranking).sum()
 
@@ -71,10 +71,10 @@ def plot_agreement_distribution_over_time(
             origin='lower',
             extent=[0, len(timesteps) - 1, 0.5, 10.5]
         )
-        ax.set_ylabel(f"{personality}\nRanking")
+        ax.set_ylabel(f"{style}\nRanking")
         ax.set_yticks(range(1, 11))
 
-        color = PERSONALITY_COLORS.get(personality, COLORS[0])
+        color = STYLE_COLORS.get(style, COLORS[0])
         ax.title.set_color(color)
 
     axes[-1].set_xlabel("Timestep")
@@ -92,19 +92,19 @@ def plot_agreement_distribution_over_time(
 
 def plot_mean_opinion_trajectory(
     df: pd.DataFrame,
-    group_by: str = "personality",
+    group_by: str = "communication_style",
     output_path: Optional[pathlib.Path] = None,
     figsize: tuple = (12, 6)
 ):
     fig, ax = plt.subplots(figsize=figsize)
 
-    if group_by == "personality":
-        for personality in df["personality"].unique():
-            p_df = df[df["personality"] == personality]
-            trajectory = p_df.groupby("timestep")["ranking"].agg(["mean", "std"])
+    if group_by == "communication_style":
+        for style in df["communication_style"].unique():
+            s_df = df[df["communication_style"] == style]
+            trajectory = s_df.groupby("timestep")["ranking"].agg(["mean", "std"])
 
-            color = PERSONALITY_COLORS.get(personality, None)
-            ax.plot(trajectory.index, trajectory["mean"], label=personality,
+            color = STYLE_COLORS.get(style, None)
+            ax.plot(trajectory.index, trajectory["mean"], label=style,
                    color=color, linewidth=2, marker='o', markersize=4)
             ax.fill_between(
                 trajectory.index,
@@ -241,16 +241,18 @@ def plot_ranking_histogram(
     for ax, t in zip(axes, timesteps):
         t_df = df[df["timestep"] == t]
 
-        for personality in sorted(t_df["personality"].unique()):
-            p_df = t_df[t_df["personality"] == personality]
-            color = PERSONALITY_COLORS.get(personality, None)
+        for style in sorted(t_df["communication_style"].unique()):
+            s_df = t_df[t_df["communication_style"] == style]
+            color = STYLE_COLORS.get(style, None)
 
-            counts, bins = np.histogram(p_df["ranking"], bins=np.arange(0.5, 11.5, 1))
+            counts, bins = np.histogram(s_df["ranking"], bins=np.arange(0.5, 11.5, 1))
+            style_keys = list(STYLE_COLORS.keys())
+            offset = style_keys.index(style) * 0.15 - 0.225 if style in style_keys else 0
             ax.bar(
-                bins[:-1] + 0.5 + list(PERSONALITY_COLORS.keys()).index(personality) * 0.15 - 0.225,
+                bins[:-1] + 0.5 + offset,
                 counts,
                 width=0.15,
-                label=personality,
+                label=style,
                 color=color,
                 alpha=0.8
             )
@@ -296,7 +298,7 @@ def plot_network_snapshot(
             else:
                 ranking = agent.agreements[-1] if agent.agreements else 5
             node_colors.append(ranking)
-            node_labels[node] = f"{agent.personality}\n{ranking}"
+            node_labels[node] = f"{agent.communication_style}\n{ranking}"
         else:
             node_colors.append(5)
             node_labels[node] = str(node)
@@ -364,15 +366,15 @@ def plot_parameter_sweep_summary(
     ax.legend(loc='best', fontsize=8)
 
     ax = axes[1, 0]
-    for personality in sorted(df["personality"].unique()):
-        p_df = df[df["personality"] == personality]
-        final_by_param = p_df[p_df["timestep"] == final_t].groupby("param_value")["ranking"].mean()
-        color = PERSONALITY_COLORS.get(personality, None)
+    for style in sorted(df["communication_style"].unique()):
+        s_df = df[df["communication_style"] == style]
+        final_by_param = s_df[s_df["timestep"] == final_t].groupby("param_value")["ranking"].mean()
+        color = STYLE_COLORS.get(style, None)
         ax.plot(final_by_param.index, final_by_param.values,
-               label=personality, marker='o', linewidth=2, color=color)
+               label=style, marker='o', linewidth=2, color=color)
     ax.set_xlabel("Parameter Value")
     ax.set_ylabel("Final Mean Ranking")
-    ax.set_title("Final Opinion by Personality Type")
+    ax.set_title("Final Opinion by Communication Style")
     ax.legend(loc='best')
     ax.set_ylim(0.5, 10.5)
 
@@ -585,8 +587,8 @@ def generate_all_plots(
     print("Generating plots...")
 
     plot_mean_opinion_trajectory(
-        df, group_by="personality",
-        output_path=output_dir / "trajectory_by_personality.png"
+        df, group_by="communication_style",
+        output_path=output_dir / "trajectory_by_style.png"
     )
     plt.close()
 
@@ -653,6 +655,7 @@ def generate_all_plots(
 
 
 if __name__ == "__main__":
+    import argparse
     from data_collector import load_yaml_results
     from analysis import (
         compute_convergence_metrics,
@@ -660,12 +663,28 @@ if __name__ == "__main__":
         compute_resilience_metrics
     )
 
+    parser = argparse.ArgumentParser(description="Generate visualization plots")
+    parser.add_argument(
+        "--experiment", "-e",
+        type=str,
+        help="Filter by experiment name prefix (e.g., 'scale_free', 'er_sweep')"
+    )
+    args = parser.parse_args()
+
     results_dir = pathlib.Path("../results")
-    plots_dir = pathlib.Path("../plots")
+    
+    if args.experiment:
+        plots_dir = pathlib.Path(f"../plots/{args.experiment}")
+    else:
+        plots_dir = pathlib.Path("../plots")
 
     if results_dir.exists():
         df = load_yaml_results(results_dir)
-        print(f"Loaded {len(df)} records")
+        print(f"Loaded {len(df)} records total")
+
+        if args.experiment and len(df) > 0:
+            df = df[df["experiment_name"].str.startswith(args.experiment)]
+            print(f"Filtered to {len(df)} records for experiment '{args.experiment}'")
 
         if len(df) > 0:
             convergence_df = compute_convergence_metrics(df)
@@ -694,6 +713,8 @@ if __name__ == "__main__":
                 degroot_df=degroot_df,
                 resilience_df=resilience_df
             )
+        else:
+            print(f"No records found" + (f" for experiment '{args.experiment}'" if args.experiment else ""))
     else:
         print(f"Results directory {results_dir} does not exist")
         print("Run experiments first to generate data")
