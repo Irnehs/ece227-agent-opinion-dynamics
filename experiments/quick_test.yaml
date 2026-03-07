@@ -1,8 +1,8 @@
 name: "quick_test"
 num_trials: 1
 time_steps: 3
-llm_model: "mistral"
-topic: "AI regulation should be mandatory for all companies"
+llm_model: "llama3.2:1b"
+topic: "Pineapple belongs on pizza"
 
 agents:
   count: 5

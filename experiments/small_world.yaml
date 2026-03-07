@@ -1,17 +1,20 @@
 name: "small_world"
-num_trials: 1
+num_trials: 3
 time_steps: 10
-llm_model: "mistral"
-topic: "AI regulation should be mandatory for all companies"
+llm_model: "llama3.2:1b"
+topic: "Pineapple belongs on pizza"
 
 agents:
-  count: 20
-  distribution: "uniform"
+  count: 40
+  distribution: "realistic"
 
 graph_type: "small_world"
 graph_params:
   k: 4
   p: 0.3
+
+sweep:
+  p: [0.1, 0.3, 0.5, 0.7]
 
 bot:
   enabled: false

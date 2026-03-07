@@ -1,16 +1,19 @@
 name: "scale_free"
-num_trials: 1
-time_steps: 10
-llm_model: "mistral"
-topic: "AI regulation should be mandatory for all companies"
+num_trials: 3
+time_steps: 15
+llm_model: "llama3.2:1b"
+topic: "Pineapple belongs on pizza"
 
 agents:
-  count: 20
-  distribution: "uniform"
+  count: 40
+  distribution: "realistic"
 
 graph_type: "scale_free"
 graph_params:
   m: 2
+
+sweep:
+  m: [1, 2, 3, 4]
 
 bot:
   enabled: false
