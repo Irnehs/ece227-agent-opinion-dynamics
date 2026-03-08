@@ -14,7 +14,7 @@ graph_params:
   p: 0.3
 
 sweep:
-  p: [0.1, 0.3, 0.5, 0.7]
+  p: [0.3, 0.5, 0.7]
 
 bot:
   enabled: false

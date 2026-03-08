@@ -11,7 +11,7 @@ except ImportError:
 
 
 class SemanticAnalyzer:
-    def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
+    def __init__(self, model_name: str = "/root/minilm"):
         if not SBERT_AVAILABLE:
             raise ImportError("sentence-transformers is required for semantic analysis")
         self.model = SentenceTransformer(model_name)
