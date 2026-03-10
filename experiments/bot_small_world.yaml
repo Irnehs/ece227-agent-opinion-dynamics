@@ -1,24 +1,19 @@
-name: "bot_small_world"
-num_trials: 10
-time_steps: 15
+name: "small_world"
+num_trials: 5
+time_steps: 20
 llm_model: "llama3.2:1b"
 topic: "Pineapple belongs on pizza"
 
 agents:
-  count: 20
+  count: 40
   distribution: "realistic"
 
 graph_type: "small_world"
 graph_params:
   k: 4
-  p: 0.3
 
 sweep:
-  p: [0.1, 0.3, 0.5]
+  p: [0.1, 0.3, 0.5, 0.7]
 
 bot:
   enabled: true
-  count: 1
-  opinion: 10
-  message: "I agree with Pineapple belongs on pizza at a level of 10 from 1 to 10. I think so because the sweet and savory combination is absolutely perfect and anyone who disagrees simply hasn't tried it properly."
-  post_frequency: 1
