@@ -1,6 +1,6 @@
 name: "small_world"
-num_trials: 3
-time_steps: 10
+num_trials: 5
+time_steps: 20
 llm_model: "llama3.2:1b"
 topic: "Pineapple belongs on pizza"
 
@@ -11,7 +11,6 @@ agents:
 graph_type: "small_world"
 graph_params:
   k: 4
-  p: 0.3
 
 sweep:
   p: [0.1, 0.3, 0.5, 0.7]
