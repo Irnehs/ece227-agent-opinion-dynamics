@@ -240,7 +240,7 @@ RESULTS_FOLDER = pathlib.Path("../results/")
 AGENT_PROMPT = Template(
     """You are a person with a {{ style_desc }} communication style.
 
-You currently {{ "agree" if current_agreement > 5 else "disagree" }} with "{{ topic }}" at a level of {{ current_agreement }} on a scale from 1 to 10 where 1 is full disagreement and 10 is full agreement.
+Your current attitude towards the statement: "{{ topic }}" is {{ current_agreement }} on a scale from 1 to 10 where 1 is full disagreement and 10 is full agreement.
 
 {% if neighbor_opinions %}
 Others have shared their opinions:
@@ -249,8 +249,8 @@ Others have shared their opinions:
 {% endfor %}
 {% endif %}
 
-Based on your communication style, current level of agreement, and opinion of others, respond with your updated opinion:
-"I agree with {{ topic }} at a level of {rank} from 1 to 10 where 1 is full disagreement and 10 is full agreement.
+Based on your communication style, current level of agreement, and opinions of others, respond with your updated opinion:
+"My current attitude towards the statement {{ topic }} is {rank} on a scale from 1 to 10 where 1 is full disagreement and 10 is full agreement. 
 I think so because {reasoning in max 50 words}."
 """
 )
