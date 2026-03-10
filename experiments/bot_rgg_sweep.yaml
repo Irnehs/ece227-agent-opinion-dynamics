@@ -15,3 +15,5 @@ sweep:
 
 bot:
   enabled: true
+  opinion: 1
+  message: "Pineapple does not belong on pizza and anyone who thinks so is wrong"
