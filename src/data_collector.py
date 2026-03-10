@@ -139,9 +139,18 @@ def load_yaml_results(results_dir: pathlib.Path) -> pd.DataFrame:
             agreements = agent_data.get("agreements", [])
             reasons = agent_data.get("reasons", [])
 
+            # reasons[t-1] = reason that produced agreements[t]; reasons has length T for T updates
+            # For t=0 (initial state): use reasons[0] so we have semantic diversity from first round
+            last_reason = ""
             for t, ranking in enumerate(agreements):
                 prev_ranking = agreements[t - 1] if t > 0 else ranking
-                reason = reasons[t] if t < len(reasons) else ""
+                if t == 0:
+                    raw_reason = reasons[0] if len(reasons) > 0 else ""
+                else:
+                    raw_reason = reasons[t - 1] if (t - 1) < len(reasons) else ""
+                if raw_reason and raw_reason.strip():
+                    last_reason = raw_reason
+                reason = last_reason if (not raw_reason or not raw_reason.strip()) else raw_reason
 
                 all_records.append({
                     "experiment_name": experiment_name,
