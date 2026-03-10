@@ -87,9 +87,9 @@ def build_agents(
     agent_id = 0
 
     for style, proportion in REALISTIC_DISTRIBUTION.items():
-        proportional_count = round(config.count * proportion)
-        for _ in range(proportional_count):
-            initial_agreement = random.randint(MIN_AGREEMENT, MAX_AGREEMENT)
+        agents_per_style = round(config.count * proportion)
+        for _ in range(agents_per_style):
+            initial_agreement = 3 if (agent_id % 2) == 0 else 7
             agent = Agent(
                 id=agent_id,
                 communication_style=style,
