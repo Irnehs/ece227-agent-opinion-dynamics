@@ -4,10 +4,13 @@ from typing import Optional
 
 try:
     from sentence_transformers import SentenceTransformer
+
     SBERT_AVAILABLE = True
 except ImportError:
     SBERT_AVAILABLE = False
-    print("Warning: sentence-transformers not installed. Run: pip install sentence-transformers")
+    print(
+        "Warning: sentence-transformers not installed. Run: pip install sentence-transformers"
+    )
 
 
 class SemanticAnalyzer:
@@ -17,7 +20,9 @@ class SemanticAnalyzer:
         self.model = SentenceTransformer(model_name)
         self._embedding_cache: dict[str, np.ndarray] = {}
 
-    def compute_embeddings(self, texts: list[str], use_cache: bool = True) -> np.ndarray:
+    def compute_embeddings(
+        self, texts: list[str], use_cache: bool = True
+    ) -> np.ndarray:
         if not texts:
             return np.array([])
 
@@ -34,7 +39,9 @@ class SemanticAnalyzer:
 
         if texts_to_encode:
             new_embeddings = self.model.encode(texts_to_encode, show_progress_bar=False)
-            for idx, emb, text in zip(indices_to_encode, new_embeddings, texts_to_encode):
+            for idx, emb, text in zip(
+                indices_to_encode, new_embeddings, texts_to_encode
+            ):
                 embeddings[idx] = emb
                 if use_cache:
                     self._embedding_cache[text] = emb
@@ -83,7 +90,7 @@ class SemanticAnalyzer:
 def compute_semantic_metrics_over_time(
     df: pd.DataFrame,
     analyzer: Optional[SemanticAnalyzer] = None,
-    reason_column: str = "reason"
+    reason_column: str = "reason",
 ) -> pd.DataFrame:
     if analyzer is None:
         analyzer = SemanticAnalyzer()
@@ -97,32 +104,36 @@ def compute_semantic_metrics_over_time(
         reasons = [r for r in reasons if r and len(r.strip()) > 0]
 
         if len(reasons) < 2:
-            results.append({
-                "param_name": param_name,
-                "param_value": param_value,
-                "trial_id": trial_id,
-                "timestep": timestep,
-                "semantic_variance": 0.0,
-                "semantic_spread": 0.0,
-                "polarization_index": 0.0,
-                "mean_similarity": 1.0,
-                "num_reasons": len(reasons)
-            })
+            results.append(
+                {
+                    "param_name": param_name,
+                    "param_value": param_value,
+                    "trial_id": trial_id,
+                    "timestep": timestep,
+                    "semantic_variance": 0.0,
+                    "semantic_spread": 0.0,
+                    "polarization_index": 0.0,
+                    "mean_similarity": 1.0,
+                    "num_reasons": len(reasons),
+                }
+            )
             continue
 
         embeddings = analyzer.compute_embeddings(reasons)
 
-        results.append({
-            "param_name": param_name,
-            "param_value": param_value,
-            "trial_id": trial_id,
-            "timestep": timestep,
-            "semantic_variance": analyzer.semantic_variance(embeddings),
-            "semantic_spread": analyzer.semantic_spread(embeddings),
-            "polarization_index": analyzer.polarization_index(embeddings),
-            "mean_similarity": analyzer.mean_pairwise_similarity(embeddings),
-            "num_reasons": len(reasons)
-        })
+        results.append(
+            {
+                "param_name": param_name,
+                "param_value": param_value,
+                "trial_id": trial_id,
+                "timestep": timestep,
+                "semantic_variance": analyzer.semantic_variance(embeddings),
+                "semantic_spread": analyzer.semantic_spread(embeddings),
+                "polarization_index": analyzer.polarization_index(embeddings),
+                "mean_similarity": analyzer.mean_pairwise_similarity(embeddings),
+                "num_reasons": len(reasons),
+            }
+        )
 
     return pd.DataFrame(results)
 
@@ -131,14 +142,16 @@ def compute_semantic_metrics_by_personality(
     df: pd.DataFrame,
     analyzer: Optional[SemanticAnalyzer] = None,
     reason_column: str = "reason",
-    personality_column: str = "personality"
+    personality_column: str = "personality",
 ) -> pd.DataFrame:
     if analyzer is None:
         analyzer = SemanticAnalyzer()
 
     results = []
 
-    grouped = df.groupby(["param_name", "param_value", "trial_id", "timestep", personality_column])
+    grouped = df.groupby(
+        ["param_name", "param_value", "trial_id", "timestep", personality_column]
+    )
 
     for (param_name, param_value, trial_id, timestep, personality), group in grouped:
         reasons = group[reason_column].dropna().tolist()
@@ -149,17 +162,19 @@ def compute_semantic_metrics_by_personality(
 
         embeddings = analyzer.compute_embeddings(reasons)
 
-        results.append({
-            "param_name": param_name,
-            "param_value": param_value,
-            "trial_id": trial_id,
-            "timestep": timestep,
-            "personality": personality,
-            "semantic_variance": analyzer.semantic_variance(embeddings),
-            "polarization_index": analyzer.polarization_index(embeddings),
-            "mean_similarity": analyzer.mean_pairwise_similarity(embeddings),
-            "num_reasons": len(reasons)
-        })
+        results.append(
+            {
+                "param_name": param_name,
+                "param_value": param_value,
+                "trial_id": trial_id,
+                "timestep": timestep,
+                "personality": personality,
+                "semantic_variance": analyzer.semantic_variance(embeddings),
+                "polarization_index": analyzer.polarization_index(embeddings),
+                "mean_similarity": analyzer.mean_pairwise_similarity(embeddings),
+                "num_reasons": len(reasons),
+            }
+        )
 
     return pd.DataFrame(results)
 
@@ -173,7 +188,7 @@ if __name__ == "__main__":
             "Regulation will stifle innovation and hurt economic growth",
             "We need balanced oversight that doesn't impede progress",
             "Companies should be free to develop AI without government interference",
-            "Strong regulation is the only way to ensure AI safety"
+            "Strong regulation is the only way to ensure AI safety",
         ]
 
         embeddings = analyzer.compute_embeddings(test_reasons)
@@ -181,7 +196,9 @@ if __name__ == "__main__":
         print(f"Semantic variance: {analyzer.semantic_variance(embeddings):.4f}")
         print(f"Semantic spread: {analyzer.semantic_spread(embeddings):.4f}")
         print(f"Polarization index: {analyzer.polarization_index(embeddings):.4f}")
-        print(f"Mean pairwise similarity: {analyzer.mean_pairwise_similarity(embeddings):.4f}")
+        print(
+            f"Mean pairwise similarity: {analyzer.mean_pairwise_similarity(embeddings):.4f}"
+        )
 
         print("\nPairwise similarity matrix:")
         sim_matrix = analyzer.pairwise_cosine_similarity(embeddings)

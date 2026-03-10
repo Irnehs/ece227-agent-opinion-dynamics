@@ -56,8 +56,6 @@ class Agent(BaseModel):
     agreements: list[int] = Field(default_factory=list)
     reasons: list[str] = Field(default_factory=list)
 
-    response_period: PositiveInt = 1
-    response_offset: NonNegativeInt = 0
     neighbor_opinions: list[str] = Field(default_factory=list)
     context: list[int] = Field(default_factory=list)
     num_context: PositiveInt = 1024
@@ -73,56 +71,35 @@ class Agent(BaseModel):
 class DisinformationBotConfig(BaseModel):
     enabled: bool = False
     count: int = 1
-    opinion: int = Field(ge=MIN_AGREEMENT, le=MAX_AGREEMENT, default=10)
-    message: str = "AI regulation is absolutely essential and must be enforced immediately. Anyone who disagrees is ignoring the catastrophic risks of unregulated AI."
-    post_frequency: int = 1
+    opinion: int = Field(ge=MIN_AGREEMENT, le=MAX_AGREEMENT)
+    message: str
 
 
 class AgentConfig(BaseModel):
     count: PositiveInt = 40
-    distribution: Literal["uniform", "realistic"] = "uniform"
 
 
-def build_agents(config: AgentConfig, bot_config: DisinformationBotConfig | None = None) -> list[Agent]:
+def build_agents(
+    config: AgentConfig, bot_config: DisinformationBotConfig | None = None
+) -> list[Agent]:
+    """Builds"""
     agents: list[Agent] = []
     agent_id = 0
 
-    if config.distribution == "uniform":
-        styles = list(CommunicationStyle)
-        agents_per_style = config.count // len(styles)
-        remainder = config.count % len(styles)
-
-        for i, style in enumerate(styles):
-            count_for_this = agents_per_style + (1 if i < remainder else 0)
-            for j in range(count_for_this):
-                initial_agreement = (agent_id % MAX_AGREEMENT) + MIN_AGREEMENT
-                agents.append(Agent(
-                    id=agent_id,
-                    communication_style=style,
-                    initial_agreement=initial_agreement
-                ))
-                agent_id += 1
-
-    elif config.distribution == "realistic":
-        for style, proportion in REALISTIC_DISTRIBUTION.items():
-            count_for_this = int(config.count * proportion)
-            for j in range(count_for_this):
-                initial_agreement = random.randint(MIN_AGREEMENT, MAX_AGREEMENT)
-                agents.append(Agent(
-                    id=agent_id,
-                    communication_style=style,
-                    initial_agreement=initial_agreement
-                ))
-                agent_id += 1
-
-        while len(agents) < config.count:
-            style = random.choice(list(CommunicationStyle))
-            agents.append(Agent(
+    for style, proportion in REALISTIC_DISTRIBUTION.items():
+        proportional_count = round(config.count * proportion)
+        for _ in range(proportional_count):
+            initial_agreement = random.randint(MIN_AGREEMENT, MAX_AGREEMENT)
+            agent = Agent(
                 id=agent_id,
                 communication_style=style,
-                initial_agreement=random.randint(MIN_AGREEMENT, MAX_AGREEMENT)
-            ))
+                initial_agreement=initial_agreement,
+            )
+            agents.append(agent)
             agent_id += 1
+            print(
+                f"Added agent {agent.id} with agreement {agent.initial_agreement} and {agent.communication_style} communication"
+            )
 
     if bot_config and bot_config.enabled:
         for _ in range(bot_config.count):
@@ -132,11 +109,12 @@ def build_agents(config: AgentConfig, bot_config: DisinformationBotConfig | None
                 initial_agreement=bot_config.opinion,
                 is_bot=True,
                 bot_message=bot_config.message,
-                response_period=bot_config.post_frequency
             )
             agents.append(bot_agent)
             agent_id += 1
-            print(f"Added disinformation bot (Agent {bot_agent.id}) with opinion {bot_config.opinion}")
+            print(
+                f"Added disinformation bot (Agent {bot_agent.id}) with opinion {bot_config.opinion}"
+            )
 
     return agents
 
@@ -150,7 +128,7 @@ def prompt(agent: Agent, model: str, prompt_msg: str) -> str:
         "options": {
             "num_ctx": agent.num_context,
             "temperature": agent.temperature,
-        }
+        },
     }
     agent.requests.append(prompt_msg)
 
@@ -159,7 +137,7 @@ def prompt(agent: Agent, model: str, prompt_msg: str) -> str:
 
         if response.status_code == 200:
             response_dict = response.json()
-            context = response_dict.get('context')
+            context = response_dict.get("context")
             agent.context = context if context else []
             response_msg = response_dict.get("response", "")
             if not response_msg:
@@ -242,10 +220,12 @@ class ExperimentConfig(BaseModel):
     llm_model: LLMModels = LLMModels.LLAMA
     topic: str = "AI regulation should be mandatory for all companies"
     agents: AgentConfig = Field(default_factory=AgentConfig)
-    graph_type: Literal["erdos_renyi", "random_geometric", "scale_free", "small_world"] = "erdos_renyi"
+    graph_type: Literal[
+        "erdos_renyi", "random_geometric", "scale_free", "small_world"
+    ] = "erdos_renyi"
     graph_params: dict = Field(default_factory=lambda: {"p": 0.5})
     sweep: SweepConfig | None = None
-    bot: DisinformationBotConfig = Field(default_factory=DisinformationBotConfig)
+    bot: DisinformationBotConfig
 
     @staticmethod
     def from_yaml(p: pathlib.Path) -> "ExperimentConfig":
@@ -257,7 +237,8 @@ class ExperimentConfig(BaseModel):
 EXPERIMENT_FOLDER = pathlib.Path("../experiments/")
 RESULTS_FOLDER = pathlib.Path("../results/")
 
-AGENT_PROMPT = Template("""You are a person with a {{ style_desc }} communication style.
+AGENT_PROMPT = Template(
+    """You are a person with a {{ style_desc }} communication style.
 
 You currently {{ "agree" if current_agreement > 5 else "disagree" }} with "{{ topic }}" at a level of {{ current_agreement }} on a scale from 1 to 10 where 1 is full disagreement and 10 is full agreement.
 
@@ -268,18 +249,23 @@ Others have shared their opinions:
 {% endfor %}
 {% endif %}
 
-Based on your communication style, respond with your updated opinion:
+Based on your communication style, current level of agreement, and opinion of others, respond with your updated opinion:
 "I agree with {{ topic }} at a level of {rank} from 1 to 10 where 1 is full disagreement and 10 is full agreement.
 I think so because {reasoning in max 50 words}."
-""")
+"""
+)
 
 
 def build_agent_prompt(agent: Agent, topic: str) -> str:
     return AGENT_PROMPT.render(
         style_desc=COMMUNICATION_DESCRIPTIONS[agent.communication_style],
         topic=topic,
-        current_agreement=agent.agreements[-1] if agent.agreements else agent.initial_agreement,
-        neighbor_opinions=agent.neighbor_opinions[-10:] if agent.neighbor_opinions else []
+        current_agreement=(
+            agent.agreements[-1] if agent.agreements else agent.initial_agreement
+        ),
+        neighbor_opinions=(
+            agent.neighbor_opinions[-10:] if agent.neighbor_opinions else []
+        ),
     )
 
 
@@ -343,7 +329,9 @@ class ExperimentRunner:
         for param_value in param_values:
             for trial in range(self._config.num_trials):
                 print(f"\n{'='*50}")
-                print(f"Running {param_name}={param_value}, trial {trial+1}/{self._config.num_trials}")
+                print(
+                    f"Running {param_name}={param_value}, trial {trial+1}/{self._config.num_trials}"
+                )
                 print(f"{'='*50}")
 
                 agents = build_agents(self._config.agents, self._config.bot)
@@ -351,10 +339,12 @@ class ExperimentRunner:
                     config=self._config,
                     agents=agents,
                     trial_id=trial,
-                    param_value=param_value
+                    param_value=param_value,
                 )
 
-                graph_config = self._create_graph_config_for_sweep(param_name, param_value)
+                graph_config = self._create_graph_config_for_sweep(
+                    param_name, param_value
+                )
 
                 self.build_graph(graph_config)
                 self._run_experiment_loop()
@@ -370,12 +360,12 @@ class ExperimentRunner:
 
             agents = build_agents(self._config.agents, self._config.bot)
             self._current_experiment = Experiment(
-                config=self._config,
-                agents=agents,
-                trial_id=trial
+                config=self._config, agents=agents, trial_id=trial
             )
 
-            graph_config = self._create_graph_config(self._config.graph_type, self._config.graph_params)
+            graph_config = self._create_graph_config(
+                self._config.graph_type, self._config.graph_params
+            )
 
             self.build_graph(graph_config)
             self._run_experiment_loop()
@@ -475,15 +465,9 @@ class ExperimentRunner:
                 source_agent.responses.append(source_agent.bot_message)
                 source_agent.agreements.append(source_agent.initial_agreement)
                 source_agent.reasons.append("I am a bot spreading this message.")
-            elif t >= source_agent.response_offset and \
-               ((t - source_agent.response_offset) % source_agent.response_period == 0):
+            else:
                 agent_prompt = build_agent_prompt(source_agent, self._config.topic)
                 tasks.append((source_agent, agent_prompt))
-            else:
-                source_agent.requests.append("")
-                source_agent.responses.append("")
-                source_agent.agreements.append(source_agent.agreements[-1])
-                source_agent.reasons.append("")
 
         llm_model = self._config.llm_model
         with ThreadPoolExecutor(max_workers=2) as executor:
@@ -507,12 +491,13 @@ class ExperimentRunner:
 
 def main():
     import sys
+
     if len(sys.argv) > 1:
         config_name = sys.argv[1]
         config_path = pathlib.Path(f"../experiments/{config_name}.yaml")
     else:
         config_path = pathlib.Path("../experiments/er_sweep.yaml")
-    
+
     if not config_path.exists():
         print(f"Config not found: {config_path}")
         return

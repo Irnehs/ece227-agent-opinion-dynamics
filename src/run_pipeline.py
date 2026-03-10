@@ -67,7 +67,10 @@ def run_analysis() -> bool:
 
     try:
         from visualization import generate_all_plots
-        from semantic_analysis import compute_semantic_metrics_over_time, SBERT_AVAILABLE
+        from semantic_analysis import (
+            compute_semantic_metrics_over_time,
+            SBERT_AVAILABLE,
+        )
 
         convergence_df = analysis_results.get("convergence")
 
@@ -80,10 +83,7 @@ def run_analysis() -> bool:
             print("SBERT not available, skipping semantic analysis")
 
         generate_all_plots(
-            df,
-            plots_dir,
-            semantic_df=semantic_df,
-            convergence_df=convergence_df
+            df, plots_dir, semantic_df=semantic_df, convergence_df=convergence_df
         )
     except ImportError as e:
         print(f"Visualization error: {e}")
@@ -92,7 +92,7 @@ def run_analysis() -> bool:
     print(f"\n{'='*60}")
     print("Pipeline complete!")
     print(f"{'='*60}")
-    print(f"\nResults saved to:")
+    print("\nResults saved to:")
     print(f"  - Analysis: {analysis_dir.absolute()}")
     print(f"  - Plots:    {plots_dir.absolute()}")
 
@@ -100,17 +100,19 @@ def run_analysis() -> bool:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Run Semantic Opinion Dynamics pipeline")
+    parser = argparse.ArgumentParser(
+        description="Run Semantic Opinion Dynamics pipeline"
+    )
     parser.add_argument(
         "--config",
         type=str,
         default="er_sweep",
-        help="Name of experiment config (without .yaml extension)"
+        help="Name of experiment config (without .yaml extension)",
     )
     parser.add_argument(
         "--analyze-only",
         action="store_true",
-        help="Skip experiment, only run analysis on existing results"
+        help="Skip experiment, only run analysis on existing results",
     )
 
     args = parser.parse_args()

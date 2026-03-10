@@ -1,7 +1,6 @@
 import csv
 import pathlib
 from dataclasses import dataclass, field
-from typing import Any
 
 import pandas as pd
 import yaml
@@ -9,6 +8,7 @@ import yaml
 
 class SafeLoaderIgnoreUnknown(yaml.SafeLoader):
     """Custom YAML loader that ignores unknown Python tags."""
+
     pass
 
 
@@ -23,8 +23,10 @@ def ignore_unknown(loader, tag_suffix, node):
     return None
 
 
-SafeLoaderIgnoreUnknown.add_multi_constructor('tag:yaml.org,2002:python/', ignore_unknown)
-SafeLoaderIgnoreUnknown.add_multi_constructor('!', ignore_unknown)
+SafeLoaderIgnoreUnknown.add_multi_constructor(
+    "tag:yaml.org,2002:python/", ignore_unknown
+)
+SafeLoaderIgnoreUnknown.add_multi_constructor("!", ignore_unknown)
 
 
 @dataclass
@@ -57,7 +59,7 @@ class DataCollector:
         neighbors: list[int],
         ranking: int,
         previous_ranking: int,
-        reason: str
+        reason: str,
     ):
         record = TimestepRecord(
             trial_id=trial_id,
@@ -69,25 +71,27 @@ class DataCollector:
             neighbors=neighbors,
             ranking=ranking,
             delta_ranking=ranking - previous_ranking,
-            reason=reason
+            reason=reason,
         )
         self.records.append(record)
 
     def to_dataframe(self) -> pd.DataFrame:
         data = []
         for r in self.records:
-            data.append({
-                "trial_id": r.trial_id,
-                "param_name": r.param_name,
-                "param_value": r.param_value,
-                "timestep": r.timestep,
-                "node_id": r.node_id,
-                "communication_style": r.communication_style,
-                "neighbors": str(r.neighbors),
-                "ranking": r.ranking,
-                "delta_ranking": r.delta_ranking,
-                "reason": r.reason
-            })
+            data.append(
+                {
+                    "trial_id": r.trial_id,
+                    "param_name": r.param_name,
+                    "param_value": r.param_value,
+                    "timestep": r.timestep,
+                    "node_id": r.node_id,
+                    "communication_style": r.communication_style,
+                    "neighbors": str(r.neighbors),
+                    "ranking": r.ranking,
+                    "delta_ranking": r.delta_ranking,
+                    "reason": r.reason,
+                }
+            )
         return pd.DataFrame(data)
 
     def save_csv(self, output_path: pathlib.Path):
@@ -133,7 +137,9 @@ def load_yaml_results(results_dir: pathlib.Path) -> pd.DataFrame:
 
         for agent_data in agents:
             node_id = agent_data.get("id", 0)
-            comm_style = agent_data.get("communication_style", agent_data.get("personality", "unknown"))
+            comm_style = agent_data.get(
+                "communication_style", agent_data.get("personality", "unknown")
+            )
             if isinstance(comm_style, list):
                 comm_style = comm_style[0] if comm_style else "unknown"
             agreements = agent_data.get("agreements", [])
@@ -152,24 +158,28 @@ def load_yaml_results(results_dir: pathlib.Path) -> pd.DataFrame:
                     last_reason = raw_reason
                 reason = last_reason if (not raw_reason or not raw_reason.strip()) else raw_reason
 
-                all_records.append({
-                    "experiment_name": experiment_name,
-                    "trial_id": trial_id,
-                    "param_name": param_name,
-                    "param_value": param_value,
-                    "timestep": t,
-                    "node_id": node_id,
-                    "communication_style": comm_style,
-                    "ranking": ranking,
-                    "delta_ranking": ranking - prev_ranking,
-                    "reason": reason
-                })
+                all_records.append(
+                    {
+                        "experiment_name": experiment_name,
+                        "trial_id": trial_id,
+                        "param_name": param_name,
+                        "param_value": param_value,
+                        "timestep": t,
+                        "node_id": node_id,
+                        "communication_style": comm_style,
+                        "ranking": ranking,
+                        "delta_ranking": ranking - prev_ranking,
+                        "reason": reason,
+                    }
+                )
 
     df = pd.DataFrame(all_records)
     return df
 
 
-def aggregate_results(results_dir: pathlib.Path, output_path: pathlib.Path | None = None) -> pd.DataFrame:
+def aggregate_results(
+    results_dir: pathlib.Path, output_path: pathlib.Path | None = None
+) -> pd.DataFrame:
     df = load_yaml_results(results_dir)
 
     if output_path:
