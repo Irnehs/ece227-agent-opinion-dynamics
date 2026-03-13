@@ -1,0 +1,19 @@
+name: "quick_test"
+num_trials: 1
+time_steps: 3
+llm_model: "llama3.2:1b"
+topic: "Pineapple belongs on pizza"
+
+agents:
+  count: 5
+  distribution: "realistic"
+
+graph_type: "erdos_renyi"
+graph_params:
+  p: 0.5
+  
+bot:
+  enabled: false
+  count: 1
+  opinion: 10
+  message: ""
