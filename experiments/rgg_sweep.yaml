@@ -1,0 +1,19 @@
+name: "rgg"
+num_trials: 3
+time_steps: 20
+llm_model: "llama3.2:1b"
+topic: "Pineapple belongs on pizza"
+
+agents:
+  count: 40
+  distribution: "realistic"
+
+graph_type: "random_geometric"
+
+sweep:
+  radius: [0.25, 0.5, 1.0, 2.0, 4.0, 8.0]
+
+bot:
+  enabled: false
+  opinion: 1
+  message: "Pineapple does not belong on pizza and anyone who thinks so is wrong"
