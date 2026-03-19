@@ -1,7 +1,7 @@
 [project]
 name = "llm-agent-semantic-diffusion"
 version = "0.1.0"
-description = "ECE 227 Final Project that examines the impact of network structure on opinion diffusio through LLM agents."
+description = "ECE 227 Final Project that examines the impact of network structure on opinion dynamics with LLM agents."
 authors = [{ name = "Henri Schulz", email = "henritschulz@gmail.com" }]
 requires-python = ">=3.13, <3.14.1"
 readme = "README.md"

@@ -49,8 +49,8 @@ python main.py quick_test
 ### 4. Analyze Results
 
 ```
-python analysis.py
-python visualization.py
+cd src
+sh ./analyze_results
 ```
 
 ---
@@ -83,56 +83,6 @@ python main.py scale_free
 python main.py er_sweep
 ```
 
-### Run Full Pipeline (Simulation + Analysis + Plots)
-
-```
-cd src
-python run_pipeline.py --config er_sweep
-```
-
----
-
-## Analyzing Results
-
-### Analyze All Results
-
-```
-cd src
-python analysis.py       # Generate CSV statistics
-python visualization.py  # Generate plots
-```
-
-### Analyze Specific Experiment Only
-
-Use the `--experiment` (or `-e`) flag to filter results by experiment name:
-
-```
-cd src
-
-# Analyze only scale_free results
-python analysis.py --experiment scale_free
-python visualization.py --experiment scale_free
-
-# Analyze only er_sweep results
-python analysis.py -e er_sweep
-python visualization.py -e er_sweep
-
-# Analyze only small_world results
-python analysis.py -e small_world
-python visualization.py -e small_world
-```
-
-This creates separate output folders for each experiment type, preventing results from being overwritten.
-
-### Analyze Existing Results (Pipeline)
-
-```
-cd src
-python run_pipeline.py --analyze-only
-```
-
----
-
 ## Where Results Are Stored
 
 ### Default (All Experiments)
@@ -140,15 +90,18 @@ python run_pipeline.py --analyze-only
 ```
 ece227-agent-opinion-dynamics/
 ├── results/                    # Raw simulation outputs
+│   ├── tables/                 # CSV files extracted from results
+│   |    ├── degroot_opinions.csv 
+│   |    ├── llm_opinions.csv 
+│   |    ├── grouped_analysis.csv 
 │   ├── er_sweep_p0.2_trial0.yaml
 │   ├── scale_free_trial0.yaml
 │   └── ...
-├── analysis_output/            # Computed statistics (CSV)
-│   ├── convergence_metrics.csv
-│   ├── opinion_trajectory.csv
-│   └── ...
 └── plots/                      # Generated visualizations (PNG)
-    ├── opinion_trajectory.png
+    ├── erdos_renyi
+    |   ├── convergence.png 
+    |   ├── degroot_gap.png 
+    |   ├── final_agreements.png 
     ├── convergence_comparison.png
     └── ...
 ```
@@ -479,6 +432,3 @@ Use the `--experiment` flag to save results to separate folders:
 python analysis.py -e scale_free
 python visualization.py -e scale_free
 ```
-
-### SBERT model download fails
-If you're behind a proxy or have network issues, SBERT-based semantic analysis will be skipped automatically. Other plots will still be generated.
