@@ -1,4 +1,0 @@
-llm_model: "llama3.2:1b"
-time_steps: 5
-graph:
-  p: 1

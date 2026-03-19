@@ -176,7 +176,6 @@ def parse_and_update_agreement(agent: Agent, response: str) -> None:
         agent.reasons.append("")
 
 
-
 class ERGraphConfig(BaseModel):
     type: Literal["erdos_renyi"] = "erdos_renyi"
     p: float = Field(ge=0.0, le=1.0)
@@ -376,12 +375,12 @@ class ExperimentRunner:
             self._save_results("single", 0, trial)
 
     def _run_experiment_loop(self):
-        assert self._current_experiment is not None
+        assert self._current_experiment is not None and self._config is not None
         while self._current_experiment.time < self._config.time_steps:
             self.step_experiment()
 
     def _save_results(self, param_name: str, param_value: float, trial: int):
-        assert self._current_experiment is not None
+        assert self._current_experiment is not None and self._config is not None
         RESULTS_FOLDER.mkdir(parents=True, exist_ok=True)
 
         for agent in self._current_experiment.agents:
@@ -438,9 +437,9 @@ class ExperimentRunner:
     def build_graph(self, graph_config):
         assert self._current_experiment is not None
         agent_list = self._current_experiment.agents
-        self.graph = graph_config.to_graph(n=len(agent_list))
+        self.graph: networkx.Graph = graph_config.to_graph(n=len(agent_list))
         agents_dict = {agent.id: agent for agent in agent_list}
-        networkx.set_node_attributes(self.graph, agents_dict, name="agent")
+        networkx.set_node_attributes(G=self.graph, values=agents_dict, name="agent")
 
     def step_experiment(self):
         assert self._current_experiment is not None
