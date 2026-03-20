@@ -54,7 +54,7 @@ def generate_topology_plots(
     g1.set_titles(row_template="{row_name}", col_template="{col_name}")
     g1.set_axis_labels(x_label, "Opinion Polarization ($\sigma$)")
     g1.tight_layout()
-    g1.savefig(graph_folder / "convergence.png")
+    g1.savefig(graph_folder / f"{graph_type}_convergence.png")
     plt.close()
 
     # Final agreements plot
@@ -74,7 +74,7 @@ def generate_topology_plots(
     g2.set_titles(row_template="{row_name}", col_template="{col_name}")
     g2.set_axis_labels(x_label, "Mean Final Agreement ($\mu$)")
     g2.tight_layout()
-    g2.savefig(graph_folder / "final_agreements.png")
+    g2.savefig(graph_folder / f"{graph_type}_final_agreeements.png")
     plt.close()
 
     # DeGroot Discrepancy Plot
@@ -95,7 +95,7 @@ def generate_topology_plots(
         x_label, "Abs Distance from Math Baseline ($|\mu_{LLM} - \mu_{Math}|$)"
     )
     g3.tight_layout()
-    g3.savefig(graph_folder / "degroot_gap.png")
+    g3.savefig(graph_folder / f"{graph_type}_degroot_gap.png")
     plt.close()
 
 
